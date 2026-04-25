@@ -57,12 +57,18 @@ def write_note(note_name: str, html_body: str) -> bool:
     end try
 end tell'''
 
-    result = subprocess.run(
-        ['osascript'],
-        input=script,
-        capture_output=True,
-        text=True
-    )
+    import tempfile, os
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.scpt', delete=False) as f:
+        f.write(script)
+        tmp_path = f.name
+    try:
+        result = subprocess.run(
+            ['osascript', tmp_path],
+            capture_output=True,
+            text=True
+        )
+    finally:
+        os.unlink(tmp_path)
 
     if result.returncode != 0 or result.stderr.strip():
         print(f"ERROR: {result.stderr}", file=sys.stderr)
@@ -71,7 +77,7 @@ end tell'''
     return True
 
 
-def find_note_name(partial_name: str) -> str | None:
+def find_note_name(partial_name: str):
     """Find a note by partial name match. Returns full name or None."""
     script = '''tell application "Notes"
     set output to ""
